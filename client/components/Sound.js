@@ -1,14 +1,13 @@
 import React from 'react'
 import Tone from 'tone'
-import PropTypes from 'prop-types';
-import { withStyles } from '@material-ui/core/styles';
-import Typography from '@material-ui/core/Typography';
-import Slider from '@material-ui/lab/Slider';
-
+import PropTypes from 'prop-types'
+import {withStyles} from '@material-ui/core/styles'
+import Typography from '@material-ui/core/Typography'
+import Slider from '@material-ui/lab/Slider'
 
 const context = new (window.AudioContext || window.webkitAudioContext)()
 const dist = new Tone.Distortion(0.8)
-let thebuff = new Tone.Buffer(`./uploads/flawless.mp3`)
+let thebuff = new Tone.Buffer(`./uploads/drone.mp3`)
 
 // Tone.Buffer.on('load', function() {
 //   grainer = new Tone.GrainPlayer(thebuff)
@@ -24,32 +23,56 @@ let thebuff = new Tone.Buffer(`./uploads/flawless.mp3`)
 
 const styles = {
   root: {
-    width: 300,
+    width: 300
   },
   slider: {
-    padding: '22px 0px',
+    padding: '22px 0px'
   },
-};
+  root1: {
+    width: 300
+  },
+  slider1: {
+    padding: '22px 0px'
+  }
+}
 
-let grainer;
+let grainer
 
 class Sound extends React.Component {
   constructor(props) {
     super(props)
 
     this.state = {
-      distortion: 50
+      distortion: 0.5,
+      grainSize: 0.5,
+      detune: 0.5,
+      overlap: 0.5,
+      playbackRate: 0.5
     }
 
+    this.handleChangeDist = this.handleChangeDist.bind(this)
     this.handleChange = this.handleChange.bind(this)
-    this.handleClick = this.handleClick.bind(this)
+    this.handleClickPlay = this.handleClickPlay.bind(this)
+    this.handleClickStop = this.handleClickStop.bind(this)
   }
 
   componentDidMount() {
     Tone.Buffer.on('load', function() {
-      grainer = new Tone.GrainPlayer(thebuff)
-      grainer.toMaster()
+      grainer = new Tone.GrainPlayer(thebuff).toMaster()
     })
+  }
+
+  componentDidUpdate() {
+    event.preventDefault()
+    console.log('distortion', this.state.distortion)
+
+    let distor = new Tone.Distortion(this.state.distortion)
+
+    grainer.detune = this.state.distortion
+    grainer.grainSize = this.state.grainSize
+    grainer.overlap = this.state.distortion
+    grainer.playbackRate = this.state.distortion
+    grainer.chain(distor).toMaster()
   }
 
   handleClickPlay() {
@@ -62,31 +85,57 @@ class Sound extends React.Component {
     grainer.stop()
   }
 
-  handleClick() {
+  handleChangeDist(event, value) {
+    console.log('value', value)
 
+    this.setState({
+      distortion: value,
+      // grainSize: value
+    })
   }
 
-  handleChange(event, distortion) {
-    console.log(this.state)
-    this.setState({distortion})
+  handleChange(event, value) {
+    console.log('value', value)
+
+    this.setState({
+      grainSize: value,
+      // grainSize: value
+    })
   }
 
   render() {
+    console.log('classes', this.props.classes)
     return (
       <div>
         <br />
-        <div className='slider'>
-        <div className={this.props.classes.root}>
-        <Typography id="label">Slider label</Typography>
-        <Slider
-          classes={{ container: this.props.classes.slider }}
-          value={this.state.distortion}
-          aria-labelledby="label"
-          onChange={this.handleChange}
-        />
-      </div>
-        <div className='distortion'>{this.state.distortion}</div>
-      </div>
+        <div className="distortion">
+          <div className={this.props.classes.root}>
+            <Typography id="label">Distortion</Typography>
+            <Slider
+              classes={{container: this.props.classes.slider}}
+              min={0}
+              max={1}
+              step={0.01}
+              value={this.state.distortion}
+              aria-labelledby="label"
+              onChange={this.handleChangeDist}
+            /> {this.state.distortion}
+          </div>
+
+          <div className={this.props.classes.root1}>
+            <Typography id="label">GrainSize</Typography>
+            <Slider
+              classes={{container: this.props.classes.slider1}}
+              min={0}
+              max={1}
+              step={0.01}
+              value={this.state.grainSize}
+              aria-labelledby="label"
+              onChange={this.handleChange}
+            />
+            {this.state.grainSize}
+          </div>
+        </div>
         <br />
         <button type="button" onClick={() => this.handleClickPlay()}>
           Start
@@ -104,14 +153,12 @@ class Sound extends React.Component {
           </button>
         </form>
         <br />
-
       </div>
     )
   }
 }
 Sound.propTypes = {
-  classes: PropTypes.object.isRequired,
-};
+  classes: PropTypes.object.isRequired
+}
 
-export default withStyles(styles)(Sound);
-
+export default withStyles(styles)(Sound)
