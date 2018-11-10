@@ -33,18 +33,6 @@ const styles = {
   },
   slider: {
     padding: '22px 0px'
-  },
-  root1: {
-    width: 300
-  },
-  slider1: {
-    padding: '22px 0px'
-  },
-  root2: {
-    width: 300
-  },
-  slider2: {
-    padding: '22px 0px'
   }
 }
 
@@ -137,35 +125,28 @@ class Sound extends React.Component {
   handleLooper() {
     event.preventDefault()
 
-    // function scheduleNext(grains) {
-    //   if (grains >= 1) {
-    //     console.log('break')
-    //     Tone.Transport.stop()
-    //   } else if (grains < 1) {
-    //     grains += .1
-    //     console.log(grains)
-    //     Tone.Transport.start()
-    //     console.log(Tone.Transport)
-    //     Tone.Transport.schedule(scheduleNext(grains))
-    //   }
-    // }
-    // scheduleNext(grainer.grainSize)
-    let grain = grainer.grainSize
-
-    const recursive = (grains) => {
-      Tone.Transport.schedule(() => {
-        if (grains >= 1) {
-          console.log('break')
-        }
-        else {
-          grains += .1
-          grainer.start()
-          Tone.Transport.start()
-          return recursive(grains)
-        }
-      }, '1m');
+    const sampler = new Tone.Sampler({
+      "C3" : "./uploads/trim-flawless.mp3",
+    })
+    const play = (time) => {
+      // sampler.triggerAttackRelease('C3', 0, time)
+      return grainer.start()
     }
-    recursive(grain)
+
+    const chainingGrain = (time) => {
+      grainer.grainSize += .1
+      console.log(grainer.grainSize)
+
+      grainer.chain(new Tone.Signal(.3), Tone.Master)
+    }
+
+    Tone.Transport.schedule(play, 0);
+    Tone.Transport.schedule(chainingGrain, 0)
+    Tone.Transport.loopEnd = '2n';
+    Tone.Transport.loop = true;
+
+    //start the transport
+    Tone.Transport.start();
   }
 
   render() {
@@ -191,10 +172,10 @@ class Sound extends React.Component {
             {this.state.distortion}
           </div>
 
-          <div className={this.props.classes.root1}>
+          <div className={this.props.classes.root}>
             <Typography id="label">GrainSize</Typography>
             <Slider
-              classes={{container: this.props.classes.slider1}}
+              classes={{container: this.props.classes.slider}}
               min={0}
               max={1}
               step={0.01}
@@ -204,10 +185,10 @@ class Sound extends React.Component {
             />
             {this.state.grainSize}
           </div>
-          <div className={this.props.classes.root2}>
+          <div className={this.props.classes.root}>
             <Typography id="label">BitCrusher</Typography>
             <Slider
-              classes={{container: this.props.classes.slider2}}
+              classes={{container: this.props.classes.slider}}
               min={1}
               max={8}
               step={1}
