@@ -9,18 +9,22 @@ import sketch1 from './Canvas'
 import p5 from 'p5'
 
 const context = new (window.AudioContext || window.webkitAudioContext)()
-let thebuff = new Tone.Buffer(`./uploads/flawless.mp3`)
+let thebuff = new Tone.Buffer(`./uploads/trim-flawless.mp3`)
 
 // Tone.Buffer.on('load', function() {
-//   grainer = new Tone.GrainPlayer(thebuff)
-//   grainer.loop = true
-//   grainer.loopStart = 190.50;
-//   grainer.loopEnd = 197.60
-//   grainer.grainSize = 0.1
-//   grainer.playbackRate = .99
-//   grainer.detune = .09
-//   grainer.overlap = 0.01
-//   grainer.chain(dist).toMaster()
+//   let reverb = new Tone.JCReverb(.99)
+//   let grainer = new Tone.Convolver('./uploads/flawless.mp3')
+//   // let pitch = new Tone.PitchShift(-48)
+//   // grainer.loop = true
+//   // grainer.loopStart = 200.90;
+//   // grainer.loopEnd = 220.60
+
+//   // grainer.grainSize = 0.1
+//   // grainer.playbackRate = .99
+//   // grainer.detune = .09
+//   // grainer.overlap = 0.01
+//   grainer.toMaster()
+//   grainer.start()
 // })
 
 const styles = {
@@ -49,18 +53,18 @@ let grainer
 class Sound extends React.Component {
   static propTypes = {
     p5Props: PropTypes.object.isRequired,
-    onSetAppState: PropTypes.func.isRequired,
-}
+    onSetAppState: PropTypes.func.isRequired
+  }
   constructor(props) {
     super(props)
 
     this.state = {
       distortion: 0.4,
       grainSize: 0.2,
-      bitCrusher: 4,
-      detune: 0.5,
-      overlap: 0.5,
-      playbackRate: 0.5
+      bitCrusher: 4
+      // detune: 0.5,
+      // overlap: 0.5,
+      // playbackRate: 0.5
     }
 
     this.handleChangeDist = this.handleChangeDist.bind(this)
@@ -68,14 +72,18 @@ class Sound extends React.Component {
     this.handleChangeBitCrusher = this.handleChangeBitCrusher.bind(this)
     this.handleClickPlay = this.handleClickPlay.bind(this)
     this.handleClickStop = this.handleClickStop.bind(this)
+    this.handleLooper = this.handleLooper.bind(this)
   }
 
   componentDidMount() {
+    // load all the buffers
     Tone.Buffer.on('load', function() {
-      grainer = new Tone.Player(thebuff).toMaster()
+      grainer = new Tone.GrainPlayer(thebuff).toMaster()
     })
+
     this.canvas1 = new p5(sketch1, 'canvas1-container')
     this.canvas1.props = this.props.p5Props
+
     // this.canvas1.onSetAppState = this.props.onSetAppState
   }
 
@@ -83,22 +91,19 @@ class Sound extends React.Component {
     event.preventDefault()
 
     let distor = new Tone.Distortion(this.state.distortion)
-    let bitCrush = new Tone.BitCrusher(this.state.bitCrusher);
-    let feedbackDelay = new Tone.FeedbackDelay("8n", 0.5)
-    var phaser = new Tone.Phaser({
-      "frequency" : 15,
-      "octaves" : 5,
-      "baseFrequency" : 1000
-    })
-    let reverb = new Tone.Reverb(7)
-    let tremolo = new Tone.Tremolo(.9, 1)
-    let pitch = new Tone.PitchShift(-120)
-
-    grainer.detune = this.state.distortion
-    grainer.grainSize = this.state.grainSize
-    grainer.overlap = this.state.distortion
-    grainer.playbackRate = this.state.distortion
-    grainer.chain(reverb, tremolo, pitch, phaser).toMaster()
+    let bitCrush = new Tone.BitCrusher(this.state.bitCrusher)
+    let feedbackDelay = new Tone.PingPongDelay('1n', 0.2).toMaster()
+    feedbackDelay.wet.value = 0.5
+    // let conv = new Tone.Convolver('./uploads/trim-flawless.mp3').toMaster()
+    // conv.wet.value = 0.5
+    let reverb = new Tone.Reverb(7, 5)
+    let tremolo = new Tone.Tremolo(0.9, 1)
+    let pitch = new Tone.PitchShift(-48)
+    // grainer.detune = this.state.distortion
+    // grainer.grainSize = this.state.grainSize
+    // grainer.overlap = this.state.distortion
+    // grainer.playbackRate = this.state.distortion
+    grainer.connect(feedbackDelay).toMaster()
   }
 
   handleClickPlay() {
@@ -127,6 +132,40 @@ class Sound extends React.Component {
     this.setState({
       bitCrusher: value
     })
+  }
+
+  handleLooper() {
+    event.preventDefault()
+
+    // function scheduleNext(grains) {
+    //   if (grains >= 1) {
+    //     console.log('break')
+    //     Tone.Transport.stop()
+    //   } else if (grains < 1) {
+    //     grains += .1
+    //     console.log(grains)
+    //     Tone.Transport.start()
+    //     console.log(Tone.Transport)
+    //     Tone.Transport.schedule(scheduleNext(grains))
+    //   }
+    // }
+    // scheduleNext(grainer.grainSize)
+    let grain = grainer.grainSize
+
+    const recursive = (grains) => {
+      Tone.Transport.schedule(() => {
+        if (grains >= 1) {
+          console.log('break')
+        }
+        else {
+          grains += .1
+          grainer.start()
+          Tone.Transport.start()
+          return recursive(grains)
+        }
+      }, '1m');
+    }
+    recursive(grain)
   }
 
   render() {
@@ -186,6 +225,9 @@ class Sound extends React.Component {
         <button type="button" onClick={() => this.handleClickStop()}>
           Stop
         </button>
+        <button type="button" onClick={() => this.handleLooper()}>
+          LOOP START
+        </button>
         <br />
         <br />
         <Upload />
@@ -195,7 +237,7 @@ class Sound extends React.Component {
   }
 }
 Sound.propTypes = {
-  classes: PropTypes.object.isRequired,
+  classes: PropTypes.object.isRequired
 }
 
 export default withStyles(styles)(Sound)

@@ -26,5 +26,6 @@ export default function (s) {
         // const alpha = s.map(s.props.slider, 5, 290, 255, 0)
         // s.fill(127, 255, 205, alpha)
         // s.ellipse(s.width / 2, s.height / 2, s.props.slider)
+
     }
 }
