@@ -4,10 +4,12 @@ import PropTypes from 'prop-types'
 import {withStyles} from '@material-ui/core/styles'
 import Typography from '@material-ui/core/Typography'
 import Slider from '@material-ui/lab/Slider'
+import {Upload} from './Upload'
+import sketch1 from './Canvas'
+import p5 from 'p5'
 
 const context = new (window.AudioContext || window.webkitAudioContext)()
-const dist = new Tone.Distortion(0.8)
-let thebuff = new Tone.Buffer(`./uploads/drone.mp3`)
+let thebuff = new Tone.Buffer(`./uploads/flawless.mp3`)
 
 // Tone.Buffer.on('load', function() {
 //   grainer = new Tone.GrainPlayer(thebuff)
@@ -33,18 +35,29 @@ const styles = {
   },
   slider1: {
     padding: '22px 0px'
+  },
+  root2: {
+    width: 300
+  },
+  slider2: {
+    padding: '22px 0px'
   }
 }
 
 let grainer
 
 class Sound extends React.Component {
+  static propTypes = {
+    p5Props: PropTypes.object.isRequired,
+    onSetAppState: PropTypes.func.isRequired,
+}
   constructor(props) {
     super(props)
 
     this.state = {
-      distortion: 0.5,
-      grainSize: 0.5,
+      distortion: 0.4,
+      grainSize: 0.2,
+      bitCrusher: 4,
       detune: 0.5,
       overlap: 0.5,
       playbackRate: 0.5
@@ -52,27 +65,40 @@ class Sound extends React.Component {
 
     this.handleChangeDist = this.handleChangeDist.bind(this)
     this.handleChange = this.handleChange.bind(this)
+    this.handleChangeBitCrusher = this.handleChangeBitCrusher.bind(this)
     this.handleClickPlay = this.handleClickPlay.bind(this)
     this.handleClickStop = this.handleClickStop.bind(this)
   }
 
   componentDidMount() {
     Tone.Buffer.on('load', function() {
-      grainer = new Tone.GrainPlayer(thebuff).toMaster()
+      grainer = new Tone.Player(thebuff).toMaster()
     })
+    this.canvas1 = new p5(sketch1, 'canvas1-container')
+    this.canvas1.props = this.props.p5Props
+    // this.canvas1.onSetAppState = this.props.onSetAppState
   }
 
   componentDidUpdate() {
     event.preventDefault()
-    console.log('distortion', this.state.distortion)
 
     let distor = new Tone.Distortion(this.state.distortion)
+    let bitCrush = new Tone.BitCrusher(this.state.bitCrusher);
+    let feedbackDelay = new Tone.FeedbackDelay("8n", 0.5)
+    var phaser = new Tone.Phaser({
+      "frequency" : 15,
+      "octaves" : 5,
+      "baseFrequency" : 1000
+    })
+    let reverb = new Tone.Reverb(7)
+    let tremolo = new Tone.Tremolo(.9, 1)
+    let pitch = new Tone.PitchShift(-120)
 
     grainer.detune = this.state.distortion
     grainer.grainSize = this.state.grainSize
     grainer.overlap = this.state.distortion
     grainer.playbackRate = this.state.distortion
-    grainer.chain(distor).toMaster()
+    grainer.chain(reverb, tremolo, pitch, phaser).toMaster()
   }
 
   handleClickPlay() {
@@ -86,27 +112,30 @@ class Sound extends React.Component {
   }
 
   handleChangeDist(event, value) {
-    console.log('value', value)
-
     this.setState({
-      distortion: value,
-      // grainSize: value
+      distortion: value
     })
   }
 
   handleChange(event, value) {
-    console.log('value', value)
-
     this.setState({
-      grainSize: value,
-      // grainSize: value
+      grainSize: value
+    })
+  }
+
+  handleChangeBitCrusher(event, value) {
+    this.setState({
+      bitCrusher: value
     })
   }
 
   render() {
-    console.log('classes', this.props.classes)
     return (
       <div>
+        <div
+          id="canvas2-container"
+          style={{width: '100%', textAlign: 'center'}}
+        />
         <br />
         <div className="distortion">
           <div className={this.props.classes.root}>
@@ -119,7 +148,8 @@ class Sound extends React.Component {
               value={this.state.distortion}
               aria-labelledby="label"
               onChange={this.handleChangeDist}
-            /> {this.state.distortion}
+            />{' '}
+            {this.state.distortion}
           </div>
 
           <div className={this.props.classes.root1}>
@@ -135,6 +165,19 @@ class Sound extends React.Component {
             />
             {this.state.grainSize}
           </div>
+          <div className={this.props.classes.root2}>
+            <Typography id="label">BitCrusher</Typography>
+            <Slider
+              classes={{container: this.props.classes.slider2}}
+              min={1}
+              max={8}
+              step={1}
+              value={this.state.bitCrusher}
+              aria-labelledby="label"
+              onChange={this.handleChangeBitCrusher}
+            />{' '}
+            {this.state.bitCrusher}
+          </div>
         </div>
         <br />
         <button type="button" onClick={() => this.handleClickPlay()}>
@@ -145,20 +188,14 @@ class Sound extends React.Component {
         </button>
         <br />
         <br />
-        <form action="/api/sounds" method="post" encType="multipart/form-data">
-          <input type="file" name="soundFile" />
-          <br />
-          <button type="submit" className="btn">
-            Submit
-          </button>
-        </form>
+        <Upload />
         <br />
       </div>
     )
   }
 }
 Sound.propTypes = {
-  classes: PropTypes.object.isRequired
+  classes: PropTypes.object.isRequired,
 }
 
 export default withStyles(styles)(Sound)
