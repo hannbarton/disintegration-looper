@@ -6,6 +6,7 @@ import Typography from '@material-ui/core/Typography'
 import Slider from '@material-ui/lab/Slider'
 import {Upload} from './Upload'
 import sketch1 from './Canvas'
+import {SongSelection} from './SongSelection'
 import p5 from 'p5'
 
 const context = new (window.AudioContext || window.webkitAudioContext)()
@@ -17,7 +18,7 @@ const styles = {
   },
   slider: {
     padding: '22px 0px'
-  }
+  },
 }
 
 let grainer
@@ -35,17 +36,17 @@ class Sound extends React.Component {
       distortion: 0.4,
       grainSize: 0.2,
       bitCrusher: 4,
-      // detune: 0.5,
-      // overlap: 0.5,
-      // playbackRate: 0.5
+      // detune: 0,
+      // overlap: 0.1,
+      // playbackRate: 1,
+      // reverse: false
     }
 
     this.handleChangeDist = this.handleChangeDist.bind(this)
     this.handleChange = this.handleChange.bind(this)
     this.handleChangeBitCrusher = this.handleChangeBitCrusher.bind(this)
-    this.handleClickPlay = this.handleClickPlay.bind(this)
-    this.handleClickStop = this.handleClickStop.bind(this)
-    this.handleLooper = this.handleLooper.bind(this)
+    this.handleLooperStart = this.handleLooperStart.bind(this)
+    this.handleLooperStop = this.handleLooperStop.bind(this)
   }
 
   componentDidMount() {
@@ -58,7 +59,7 @@ class Sound extends React.Component {
     this.canvas1 = new p5(sketch1, 'canvas1-container')
     this.canvas1.props = this.props.p5Props
 
-    // this.canvas1.onSetAppState = this.props.onSetAppState
+    this.canvas1.onSetAppState = this.props.onSetAppState
   }
 
   componentDidUpdate() {
@@ -66,28 +67,11 @@ class Sound extends React.Component {
 
     let distor = new Tone.Distortion(this.state.distortion)
     let bitCrush = new Tone.BitCrusher(this.state.bitCrusher)
-    // let feedbackDelay = new Tone.PingPongDelay('1n', 0.2).toMaster()
-    // feedbackDelay.wet.value = 0.5
-    // let conv = new Tone.Convolver('./uploads/trim-flawless.mp3').toMaster()
-    // conv.wet.value = 0.5
-    let reverb = new Tone.Reverb(7, 5)
-    let tremolo = new Tone.Tremolo(0.9, 1)
-    let pitch = new Tone.PitchShift(-48)
-    // grainer.detune = this.state.distortion
+    // grainer.detune = this.state.detune
     // grainer.grainSize = this.state.grainSize
-    // grainer.overlap = this.state.distortion
-    // grainer.playbackRate = this.state.distortion
+    // grainer.overlap = this.state.overlap
+    // grainer.playbackRate = this.state.playbackRate
     grainer.connect(distor, bitCrush).toMaster()
-  }
-
-  handleClickPlay() {
-    event.preventDefault()
-    grainer.start()
-  }
-
-  handleClickStop() {
-    event.preventDefault()
-    grainer.stop()
   }
 
   handleChangeDist(event, value) {
@@ -108,27 +92,18 @@ class Sound extends React.Component {
     })
   }
 
-  handleLooper() {
+  handleLooperStart() {
     event.preventDefault()
     const play = () => {
       grainer.start()
       grainer.loop = true
     }
 
-    const filter = new Tone.AutoFilter({
-      "frequency" : "8m",
-      "min" : 800,
-      "max" : 15000
-    }).connect(Tone.Master)
-    const tremolo = new Tone.Tremolo(9, 0.75).connect(Tone.Master)
-
     setInterval(() => {
       grainer.grainSize += 0.1
       // grainer.volume.value -= 2.5
-      grainer.detune = -500
-      grainer.chain(filter)
+      // grainer.detune = -500
 
-      console.log('vol', filter, tremolo)
     }, 5100)
 
     Tone.Transport.schedule(play, 0)
@@ -136,9 +111,15 @@ class Sound extends React.Component {
     Tone.Transport.start()
   }
 
+  handleLooperStop() {
+    event.preventDefault()
+    grainer.stop()
+  }
+
   render() {
     return (
       <div>
+        <SongSelection />
         <div
           id="canvas2-container"
           style={{width: '100%', textAlign: 'center'}}
@@ -146,7 +127,7 @@ class Sound extends React.Component {
         <br />
         <div className="distortion">
           <div className={this.props.classes.root}>
-            <Typography id="label">Distortion</Typography>
+            <Typography id="label">Detune</Typography>
             <Slider
               classes={{container: this.props.classes.slider}}
               min={0}
@@ -185,21 +166,21 @@ class Sound extends React.Component {
             />{' '}
             {this.state.bitCrusher}
           </div>
+          <button type='button'>Reverse</button>
         </div>
         <br />
-        <button type="button" onClick={() => this.handleClickPlay()}>
-          Start
+        <button type="button" onClick={() => this.handleLooperStart()}>
+          LOOP START/RESTART
         </button>
-        <button type="button" onClick={() => this.handleClickStop()}>
-          Stop
-        </button>
-        <button type="button" onClick={() => this.handleLooper()}>
-          LOOP START
-        </button>
+        <button type="button" onClick={() => this.handleLooperStop()}>
+          LOOP STOP
+          </button>
+
         <br />
         <br />
         <Upload />
         <br />
+        {/* <ReadDir /> */}
       </div>
     )
   }
