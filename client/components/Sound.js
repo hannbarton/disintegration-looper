@@ -9,9 +9,6 @@ import sketch1 from './Canvas'
 import {SongSelection} from './SongSelection'
 import p5 from 'p5'
 
-const context = new (window.AudioContext || window.webkitAudioContext)()
-let thebuff = new Tone.Buffer(`./uploads/disintegration.mp3`)
-
 const styles = {
   root: {
     width: 300
@@ -20,6 +17,9 @@ const styles = {
     padding: '22px 0px'
   },
 }
+
+let song = 'disintegration'
+let thebuff = new Tone.Buffer(`./uploads/${song}.mp3`)
 
 let grainer
 let volume = 0
@@ -33,18 +33,17 @@ class Sound extends React.Component {
     super(props)
 
     this.state = {
-      distortion: 0.4,
       grainSize: 0.2,
-      bitCrusher: 4,
-      // detune: 0,
-      // overlap: 0.1,
-      // playbackRate: 1,
-      // reverse: false
+      detune: 0,
+      overlap: 0.1,
+      playbackRate: 1,
+      reverse: false
     }
 
-    this.handleChangeDist = this.handleChangeDist.bind(this)
-    this.handleChange = this.handleChange.bind(this)
-    this.handleChangeBitCrusher = this.handleChangeBitCrusher.bind(this)
+    this.handleChangeDetune = this.handleChangeDetune.bind(this)
+    this.handleChangeGrainSize = this.handleChangeGrainSize.bind(this)
+    this.handleChangeOverlap = this.handleChangeOverlap.bind(this)
+    this.handleChangePlaybackRate = this.handleChangePlaybackRate.bind(this)
     this.handleLooperStart = this.handleLooperStart.bind(this)
     this.handleLooperStop = this.handleLooperStop.bind(this)
   }
@@ -64,31 +63,40 @@ class Sound extends React.Component {
 
   componentDidUpdate() {
     event.preventDefault()
-
-    let distor = new Tone.Distortion(this.state.distortion)
-    let bitCrush = new Tone.BitCrusher(this.state.bitCrusher)
-    // grainer.detune = this.state.detune
-    // grainer.grainSize = this.state.grainSize
-    // grainer.overlap = this.state.overlap
-    // grainer.playbackRate = this.state.playbackRate
-    grainer.connect(distor, bitCrush).toMaster()
+    grainer.detune = this.state.detune
+    grainer.grainSize = this.state.grainSize
+    grainer.overlap = this.state.overlap
+    grainer.playbackRate = this.state.playbackRate
+    grainer.toMaster()
   }
 
-  handleChangeDist(event, value) {
+  handleChangeDetune(event, value) {
     this.setState({
-      distortion: value
+      detune: value
     })
   }
 
-  handleChange(event, value) {
+  handleChangeGrainSize(event, value) {
     this.setState({
       grainSize: value
     })
   }
 
-  handleChangeBitCrusher(event, value) {
+  handleChangeOverlap(event, value) {
     this.setState({
-      bitCrusher: value
+      overlap: value
+    })
+  }
+
+  handleChangePlaybackRate(event, value) {
+    this.setState({
+      playbackRate: value
+    })
+  }
+
+  handleChangeReverse() {
+    this.setState({
+      reverse: !this.state.reverse
     })
   }
 
@@ -103,7 +111,6 @@ class Sound extends React.Component {
       grainer.grainSize += 0.1
       // grainer.volume.value -= 2.5
       // grainer.detune = -500
-
     }, 5100)
 
     Tone.Transport.schedule(play, 0)
@@ -125,19 +132,19 @@ class Sound extends React.Component {
           style={{width: '100%', textAlign: 'center'}}
         />
         <br />
-        <div className="distortion">
+        <div className="detune">
           <div className={this.props.classes.root}>
             <Typography id="label">Detune</Typography>
             <Slider
               classes={{container: this.props.classes.slider}}
-              min={0}
-              max={1}
-              step={0.01}
-              value={this.state.distortion}
+              min={-10}
+              max={10}
+              step={1}
+              value={this.state.detune}
               aria-labelledby="label"
-              onChange={this.handleChangeDist}
+              onChange={this.handleChangeDetune}
             />{' '}
-            {this.state.distortion}
+            {this.state.detune}
           </div>
 
           <div className={this.props.classes.root}>
@@ -154,17 +161,30 @@ class Sound extends React.Component {
             {this.state.grainSize}
           </div>
           <div className={this.props.classes.root}>
-            <Typography id="label">BitCrusher</Typography>
+            <Typography id="label">Overlap</Typography>
             <Slider
               classes={{container: this.props.classes.slider}}
               min={1}
               max={8}
               step={1}
-              value={this.state.bitCrusher}
+              value={this.state.overlap}
               aria-labelledby="label"
-              onChange={this.handleChangeBitCrusher}
+              onChange={this.handleChangeOverlap}
             />{' '}
-            {this.state.bitCrusher}
+            {this.state.overlap}
+          </div>
+          <div className={this.props.classes.root}>
+            <Typography id="label">PlaybackRate</Typography>
+            <Slider
+              classes={{container: this.props.classes.slider}}
+              min={1}
+              max={8}
+              step={1}
+              value={this.state.playbackRate}
+              aria-labelledby="label"
+              onChange={this.handleChangePlaybackRate}
+            />{' '}
+            {this.state.playbackRate}
           </div>
           <button type='button'>Reverse</button>
         </div>
