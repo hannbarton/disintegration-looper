@@ -4,25 +4,31 @@ import PropTypes from 'prop-types'
 import {withStyles} from '@material-ui/core/styles'
 import Typography from '@material-ui/core/Typography'
 import Slider from '@material-ui/lab/Slider'
-import {Upload} from './Upload'
+// import {Upload} from './Upload'
+// import {SongSelection} from './SongSelection'
 import sketch1 from './Canvas'
-import {SongSelection} from './SongSelection'
 import p5 from 'p5'
 
 const styles = {
   root: {
-    width: 300
+    width: 250,
   },
   slider: {
-    padding: '22px 0px'
+    padding: '10px 0px',
+    margin: '0px 0px'
   },
 }
 
 let song = 'disintegration'
+// let song = 'earthbound-sanctuary'
+// let song = 'yumenikki-07'
+// let song = 'orcas3'
+// let song = 'yumenikki-10'
 let thebuff = new Tone.Buffer(`./uploads/${song}.mp3`)
 
 let grainer
-let volume = 0
+let incrementer = 0;
+let setInt;
 
 class Sound extends React.Component {
   static propTypes = {
@@ -36,14 +42,11 @@ class Sound extends React.Component {
       grainSize: 0.2,
       detune: 0,
       overlap: 0.1,
-      playbackRate: 1,
-      reverse: false
     }
 
     this.handleChangeDetune = this.handleChangeDetune.bind(this)
     this.handleChangeGrainSize = this.handleChangeGrainSize.bind(this)
     this.handleChangeOverlap = this.handleChangeOverlap.bind(this)
-    this.handleChangePlaybackRate = this.handleChangePlaybackRate.bind(this)
     this.handleLooperStart = this.handleLooperStart.bind(this)
     this.handleLooperStop = this.handleLooperStop.bind(this)
   }
@@ -52,7 +55,6 @@ class Sound extends React.Component {
     // load all the buffers
     Tone.Buffer.on('load', function() {
       grainer = new Tone.GrainPlayer(thebuff).toMaster()
-      grainer.reverse = false
     })
 
     this.canvas1 = new p5(sketch1, 'canvas1-container')
@@ -66,7 +68,6 @@ class Sound extends React.Component {
     grainer.detune = this.state.detune
     grainer.grainSize = this.state.grainSize
     grainer.overlap = this.state.overlap
-    grainer.playbackRate = this.state.playbackRate
     grainer.toMaster()
   }
 
@@ -88,30 +89,30 @@ class Sound extends React.Component {
     })
   }
 
-  handleChangePlaybackRate(event, value) {
-    this.setState({
-      playbackRate: value
-    })
-  }
-
-  handleChangeReverse() {
-    this.setState({
-      reverse: !this.state.reverse
-    })
-  }
-
   handleLooperStart() {
     event.preventDefault()
+
     const play = () => {
       grainer.start()
       grainer.loop = true
     }
 
-    setInterval(() => {
-      grainer.grainSize += 0.1
-      // grainer.volume.value -= 2.5
-      // grainer.detune = -500
-    }, 5100)
+    setInt = setInterval(() => {
+      grainer.volume.value -= 2.5
+      console.log('volume', grainer.volume.value)
+      grainer.grainSize += 0.005
+      console.log('grainsize', grainer.grainSize)
+      grainer.detune -= 2.5
+      console.log('detune', grainer.detune)
+      grainer.overlap += 0.08
+
+      let freeverb = new Tone.Freeverb().toMaster();
+      freeverb.dampening.value -= 5;
+      incrementer += .04
+      let reverb = new Tone.JCReverb(incrementer).toMaster()
+      grainer.chain(freeverb, reverb).toMaster()
+
+    }, 5200)
 
     Tone.Transport.schedule(play, 0)
 
@@ -121,18 +122,21 @@ class Sound extends React.Component {
   handleLooperStop() {
     event.preventDefault()
     grainer.stop()
+    clearInterval(setInt)
   }
 
   render() {
     return (
-      <div>
-        <SongSelection />
+      <div className='main-container'>
+      <p>Instructions: Begin the loop and hear the music distort with every loop</p>
         <div
-          id="canvas2-container"
+          id="canvas1-container"
+          justify="center"
           style={{width: '100%', textAlign: 'center'}}
         />
+        <div className='align-box'>
         <br />
-        <div className="detune">
+        <div className="adjustment">
           <div className={this.props.classes.root}>
             <Typography id="label">Detune</Typography>
             <Slider
@@ -144,63 +148,51 @@ class Sound extends React.Component {
               aria-labelledby="label"
               onChange={this.handleChangeDetune}
             />{' '}
-            {this.state.detune}
+            {Number.parseFloat(this.state.detune).toFixed(0)}
           </div>
-
+          <br/>
           <div className={this.props.classes.root}>
             <Typography id="label">GrainSize</Typography>
             <Slider
               classes={{container: this.props.classes.slider}}
               min={0}
               max={1}
-              step={0.01}
+
               value={this.state.grainSize}
               aria-labelledby="label"
-              onChange={this.handleChange}
+              onChange={this.handleChangeGrainSize}
             />
-            {this.state.grainSize}
+            {Number.parseFloat(this.state.grainSize).toFixed(2)}
           </div>
+          <br/>
           <div className={this.props.classes.root}>
             <Typography id="label">Overlap</Typography>
             <Slider
               classes={{container: this.props.classes.slider}}
-              min={1}
-              max={8}
-              step={1}
+              min={0}
+              max={1}
+
               value={this.state.overlap}
               aria-labelledby="label"
               onChange={this.handleChangeOverlap}
             />{' '}
-            {this.state.overlap}
+            {Number.parseFloat(this.state.overlap).toFixed(2)}
           </div>
-          <div className={this.props.classes.root}>
-            <Typography id="label">PlaybackRate</Typography>
-            <Slider
-              classes={{container: this.props.classes.slider}}
-              min={1}
-              max={8}
-              step={1}
-              value={this.state.playbackRate}
-              aria-labelledby="label"
-              onChange={this.handleChangePlaybackRate}
-            />{' '}
-            {this.state.playbackRate}
-          </div>
-          <button type='button'>Reverse</button>
+          <br/>
+          {/* <button type='button' onClick={() => this.handleChangeReverse}>Reverse</button> */}
         </div>
         <br />
         <button type="button" onClick={() => this.handleLooperStart()}>
-          LOOP START/RESTART
+          START LOOP
         </button>
         <button type="button" onClick={() => this.handleLooperStop()}>
-          LOOP STOP
+          STOP LOOP
           </button>
 
         <br />
         <br />
-        <Upload />
         <br />
-        {/* <ReadDir /> */}
+        </div>
       </div>
     )
   }

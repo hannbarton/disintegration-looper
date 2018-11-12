@@ -1,31 +1,34 @@
+import p5 from 'p5'
+import React from 'react'
+import "p5/lib/addons/p5.sound";
+
 export default function (s) {
     s.props = {}
     s.onSetAppState = () => {}
 
+    let mic, fft
     s.setup = function() {
         s.createCanvas(900, 300)
-        console.log('::: displayDensity:', s.displayDensity())
-        console.log('::: pixelDensity:', s.pixelDensity())
+        mic = new p5.AudioIn();
+        mic.start();
+        fft = new p5.FFT();
+        fft.setInput(mic);
     }
 
     s.draw = function() {
-        if (s.mouseIsPressed) {
-            s.fill(0);
-          } else {
-            s.fill(255);
-          }
-          s.ellipse(s.mouseX, s.mouseY, 80, 80);
-    //     if (s.frameCount % 60 === 1) {
-    //         s.onSetAppState({ frameRate: s.frameRate().toFixed(1) })
-    //     }
 
-    //     s.background(127, 0, 50)
-        // const weight = s.map(s.props.slider, 5, 290, 0, 10)
-        // s.strokeWeight(weight)
-        // s.stroke(127, 255, 205)
-        // const alpha = s.map(s.props.slider, 5, 290, 255, 0)
-        // s.fill(127, 255, 205, alpha)
-        // s.ellipse(s.width / 2, s.height / 2, s.props.slider)
+        s.background('#f08080');
+
+        var spectrum = fft.analyze();
+
+        s.beginShape();
+        for (let i = 0; i<spectrum.length; i++) {
+
+         s.vertex(i, s.map(spectrum[i], 0, s.height, s.height, 0));
+        }
+        s.endShape();
 
     }
 }
+
+//#add8e6

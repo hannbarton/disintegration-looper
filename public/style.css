@@ -1,8 +1,8 @@
 body {
   font-family: sans-serif;
   text-align: center;
-  margin-left: 30%;
-  margin-right: 30%
+  margin-left: 0;
+  margin-right: 0;
 }
 
 a {
@@ -21,4 +21,9 @@ nav a {
 form div {
   margin: 1em;
   display: inline-block;
+}
+
+.align-box {
+  display: inline-block
+
 }
